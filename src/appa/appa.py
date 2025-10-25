@@ -48,6 +48,7 @@ class APPA:
             enable_checkpointing=False,
             enable_model_summary=False,
             enable_progress_bar=self._logging,
+            logger=self._logging,
         )
 
         train_ds = T.utils.data.TensorDataset(X_high, X_proj)
