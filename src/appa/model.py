@@ -66,7 +66,6 @@ class APPALitModule(L.LightningModule):
         threshold = self.barrier_width
         proximity_to_bad_spots = F.relu(threshold - distances).sum(dim=1).mean()
 
-        # loss = loss + 0.1 * proximity_to_bad_spots
         total_loss = loss + self.barrier_strength * proximity_to_bad_spots
         if self.use_log:
             self.log_dict(
@@ -118,10 +117,9 @@ class DiffAPPALitModule(L.LightningModule):
         loss = F.mse_loss(x_proj_perturbed, x_proj)
 
         kde_loss = self._kde.score_samples(x_proj_perturbed)
-        # kde_loss = T.sigmoid(-kde_loss).mean()
         kde_loss = -kde_loss.clip(max=0.0).mean()
 
-        loss_total = loss + 0.002 * kde_loss * 2
+        loss_total = loss + 0.002 * kde_loss
         if self.use_log:
             self.log_dict({"t_loss": loss_total, "kde_l": kde_loss, "mse_l": loss}, prog_bar=True)
 

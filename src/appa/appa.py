@@ -62,17 +62,10 @@ class APPA:
             inputs = T.tensor(inputs)
 
         with T.no_grad():
-            return self._model(inputs)
+            return self._model(inputs.float())
 
     @T.no_grad()
     def _convert(self, tensor_like: np.ndarray | T.Tensor) -> T.Tensor:
         if not T.is_tensor(tensor_like):
             tensor_like = T.tensor(tensor_like)
         return tensor_like.float()
-
-    def _make_2d_grid(self, grid_size: int) -> np.ndarray:
-        xs = np.linspace(0.0, 1.0, grid_size)
-        ys = np.linspace(0.0, 1.0, grid_size)
-        xx, yy = np.meshgrid(xs, ys)
-        xy = np.stack([xx.ravel(), yy.ravel()], axis=1)
-        return xy
