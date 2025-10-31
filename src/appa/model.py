@@ -3,6 +3,10 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import lightning as L
+import logging
+import torchkde as tkde
+
+logger = logging.getLogger(__name__)
 
 
 class Net(nn.Module):
@@ -27,10 +31,10 @@ class Net(nn.Module):
         return self.net(inputs)
 
 
-class LitNet(L.LightningModule):
+class APPALitModule(L.LightningModule):
     def __init__(
         self,
-        model: Net,
+        model: nn.Module,
         points_to_avoid: T.Tensor,
         barrier_strength: float = 0.5,
         barrier_width: float = 0.02,
@@ -71,3 +75,59 @@ class LitNet(L.LightningModule):
             )
 
         return total_loss
+
+
+class DiffAPPALitModule(L.LightningModule):
+    def __init__(
+        self,
+        model: nn.Module,
+        kde_model: tkde.KernelDensity,
+        kde_data: T.Tensor,
+        use_log=False,
+    ):
+        super().__init__()
+
+        self.model = model
+        self.use_log = use_log
+        self._kde = kde_model
+        self._kde_data = kde_data
+
+        self.input_noise_std = 0.2
+        self.proj_noise_std = 0.2
+
+    def configure_optimizers(self):
+        return optim.Adam(self.model.parameters())
+
+    def on_fit_start(self):
+        if self.use_log:
+            logger.info("setup(): fitting KDE")
+        # The data on which KDE is fit must be on the same
+        # device as the data we will call score_samples for.
+        # Since we only know the device where training will
+        # run once fit() is called, we must fit the KDE here,
+        # after moving it to the correct device.
+        self._kde.fit(self._kde_data.to(self.device))
+
+    def training_step(self, batch, batch_idx):
+        x, x_proj = batch
+
+        x_proj_hat = self.model(x + T.randn_like(x) * self.input_noise_std)
+
+        x_proj_perturbed = x_proj_hat + T.randn_like(x_proj_hat) * self.proj_noise_std
+        # loss = F.mse_loss(x_proj_hat, x_proj + T.randn_like(x_proj) * self.proj_noise_std)
+        loss = F.mse_loss(x_proj_perturbed, x_proj)
+
+        kde_loss = self._kde.score_samples(x_proj_perturbed)
+        # kde_loss = T.sigmoid(-kde_loss).mean()
+        kde_loss = -kde_loss.clip(max=0.0).mean()
+
+        loss_total = loss + 0.002 * kde_loss * 2
+        if self.use_log:
+            self.log_dict({"t_loss": loss_total, "kde_l": kde_loss, "mse_l": loss}, prog_bar=True)
+
+        return loss_total
+
+    def on_train_epoch_start(self):
+        if False and self.current_epoch > 350:  # TODO CHANGE
+            self.input_noise_std = 0.02
+            self.proj_noise_std = 0.02

@@ -12,6 +12,7 @@ dependencies = [
     "numpy>=1.26.4",
     "scikit-learn>=1.7.2",
     "torch>=2.9.0",
+    "torch-kde>=0.1.5",
 ]
 
 [build-system]
@@ -23,5 +24,10 @@ dev = [
     "ipykernel>=7.0.1",
     "matplotlib>=3.10.7",
     "scipy>=1.16.2",
-    "tensorflow-projection-qm>=0.2.3",
+    "tensorflow-projection-qm",
+    "umap-learn>=0.5.9.post2",
 ]
+
+[tool.uv.sources]
+tensorflow-projection-qm = { path = "../tf-projection-qm" }
+torch-kde = { git = "https://github.com/amreis/torch-kde" }

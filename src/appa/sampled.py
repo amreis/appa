@@ -1,13 +1,10 @@
-import logging
-
 import lightning as L
 import numpy as np
 import torch as T
-import torchkde as tkde
+from sklearn.neighbors import KernelDensity, NearestNeighbors
+from sklearn.preprocessing import minmax_scale
 
-from appa.model import Net, DiffAPPALitModule
-
-logger = logging.getLogger(__name__)
+from appa.model import Net, APPALitModule
 
 
 class APPA:
@@ -16,29 +13,33 @@ class APPA:
         input_dim: int,
         proj_dim: int,
         *,
+        barrier_strength: float = 0.5,
+        barrier_width: float = 0.02,
         logging: bool = False,
-        kde_kernel: str = "gaussian",
-        kde_bandwidth: float = 0.01,
     ):
         self.input_dim = input_dim
         self.proj_dim = proj_dim
         self._logging = logging
+
+        self.barrier_strength = barrier_strength
+        self.barrier_width = barrier_width
 
         self._grid_size = 300  # factor out 300 into hparam
 
         self._model = Net(self.input_dim, self.proj_dim)
         self._training_epochs = 400
 
-        self._kde = tkde.KernelDensity(bandwidth=kde_bandwidth, kernel=kde_kernel, eps=1e-5)
-
     def fit(self, X_high: np.ndarray | T.Tensor, X_proj: np.ndarray | T.Tensor):
         X_high = self._convert(X_high)
         X_proj = self._convert(X_proj)
 
-        litmodel = DiffAPPALitModule(
+        sampled_barrier = self._compute_barrier_function(X_proj)
+
+        litmodel = APPALitModule(
             self._model,
-            self._kde,
-            kde_data=X_proj,
+            sampled_barrier,
+            barrier_strength=self.barrier_strength,
+            barrier_width=self.barrier_width,
             use_log=self._logging,
         )
 
@@ -50,6 +51,7 @@ class APPA:
             enable_progress_bar=self._logging,
             logger=self._logging,
         )
+
         train_ds = T.utils.data.TensorDataset(X_high, X_proj)
         train_dl = T.utils.data.DataLoader(train_ds, batch_size=1024, shuffle=True)
 
@@ -69,6 +71,29 @@ class APPA:
         if not T.is_tensor(tensor_like):
             tensor_like = T.tensor(tensor_like)
         return tensor_like.float()
+
+    def _compute_barrier_function(
+        self, X_proj: T.Tensor, *, return_prob: bool = False
+    ) -> T.Tensor | tuple[T.Tensor, np.ndarray]:
+        grid = self._make_2d_grid(self._grid_size)
+
+        kde = KernelDensity(kernel="gaussian", bandwidth=0.01)
+        kde.fit(X_proj.numpy())
+        Z = kde.score_samples(grid).reshape((self._grid_size, self._grid_size))
+
+        neighbors = NearestNeighbors(n_neighbors=1, p=2).fit(X_proj.numpy())
+        D = neighbors.kneighbors(grid)[0].reshape((self._grid_size, self._grid_size))
+
+        sample_prob_2d = minmax_scale(1 / (1000 + np.exp(Z))) / (1 + D)
+        rnd = np.random.random_sample(size=(10000, 2))
+        bin_width = 1.0 / self._grid_size
+        bin_ix = np.clip((rnd / bin_width).round().astype(int), 0, 299)
+        keep = sample_prob_2d[bin_ix[:, 1], bin_ix[:, 0]] >= np.quantile(sample_prob_2d, 0.8)
+
+        sampled_barrier = T.from_numpy(rnd[keep].copy()).float()
+        if return_prob:
+            return sampled_barrier, sample_prob_2d
+        return sampled_barrier
 
     def _make_2d_grid(self, grid_size: int) -> np.ndarray:
         xs = np.linspace(0.0, 1.0, grid_size)
