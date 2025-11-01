@@ -91,8 +91,8 @@ class DiffAPPALitModule(L.LightningModule):
         self._kde = kde_model
         self._kde_data = kde_data
 
-        self.input_noise_std = 0.2
-        self.proj_noise_std = 0.2
+        self.input_noise_std = 0.02
+        self.proj_noise_std = 0.02
 
     def configure_optimizers(self):
         return optim.Adam(self.model.parameters())
@@ -117,7 +117,7 @@ class DiffAPPALitModule(L.LightningModule):
         loss = F.mse_loss(x_proj_perturbed, x_proj)
 
         kde_loss = self._kde.score_samples(x_proj_perturbed)
-        kde_loss = -kde_loss.clip(max=0.0).mean()
+        kde_loss = kde_loss.clip(max=-2.0).neg().mean()
 
         loss_total = loss + 0.002 * kde_loss
         if self.use_log:

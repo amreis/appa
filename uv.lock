@@ -2273,7 +2273,7 @@ wheels = [
 
 [[package]]
 name = "tensorflow-projection-qm"
-version = "0.2.3"
+version = "0.3.0.post3"
 source = { directory = "../tf-projection-qm" }
 dependencies = [
     { name = "numpy" },
@@ -2283,12 +2283,14 @@ dependencies = [
 
 [package.metadata]
 requires-dist = [
-    { name = "numpy", specifier = ">=1.24" },
-    { name = "scipy", specifier = ">=1.13.1" },
+    { name = "numpy", specifier = ">=2" },
+    { name = "scipy", specifier = ">=1.14" },
     { name = "tensorflow", marker = "python_full_version < '3.12'", specifier = ">=2.15" },
-    { name = "tensorflow", marker = "python_full_version >= '3.12'", specifier = ">=2.17" },
-    { name = "tensorflow", extras = ["and-cuda"], marker = "python_full_version >= '3.12' and extra == 'and-cuda'", specifier = ">=2.17" },
+    { name = "tensorflow", marker = "python_full_version == '3.12.*'", specifier = ">=2.17" },
+    { name = "tensorflow", marker = "python_full_version >= '3.13'", specifier = ">=2.20" },
+    { name = "tensorflow", extras = ["and-cuda"], marker = "python_full_version == '3.12.*' and extra == 'and-cuda'", specifier = ">=2.17" },
     { name = "tensorflow", extras = ["and-cuda"], marker = "python_full_version < '3.12' and extra == 'and-cuda'", specifier = ">=2.15" },
+    { name = "tensorflow", extras = ["and-cuda"], marker = "python_full_version == '3.13.*' and extra == 'and-cuda'", specifier = ">=2.20" },
 ]
 provides-extras = ["and-cuda"]
 
@@ -2298,7 +2300,7 @@ dev = [
     { name = "pre-commit", specifier = ">=3.8" },
     { name = "pytest", specifier = ">=8.3" },
     { name = "scikit-learn", specifier = ">=1.5" },
-    { name = "tensorboard-plugin-profile", specifier = "==2.17.0" },
+    { name = "tensorboard-plugin-profile", specifier = ">=2.17.0" },
 ]
 
 [[package]]
