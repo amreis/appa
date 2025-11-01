@@ -116,8 +116,8 @@ class DiffAPPALitModule(L.LightningModule):
         # loss = F.mse_loss(x_proj_hat, x_proj + T.randn_like(x_proj) * self.proj_noise_std)
         loss = F.mse_loss(x_proj_perturbed, x_proj)
 
-        kde_loss = self._kde.score_samples(x_proj_perturbed)
-        kde_loss = kde_loss.clip(max=-2.0).neg().mean()
+        kde_log_prob = self._kde.score_samples(x_proj_perturbed)
+        kde_loss = kde_log_prob.clip(max=-2.0).neg().mean()
 
         loss_total = loss + 0.002 * kde_loss
         if self.use_log:
