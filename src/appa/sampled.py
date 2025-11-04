@@ -27,7 +27,7 @@ class APPA:
         self._grid_size = 300  # factor out 300 into hparam
 
         self._model = Net(self.input_dim, self.proj_dim)
-        self._training_epochs = 400
+        self._training_epochs = 300
 
     def fit(self, X_high: np.ndarray | T.Tensor, X_proj: np.ndarray | T.Tensor):
         X_high = self._convert(X_high)

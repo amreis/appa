@@ -27,7 +27,7 @@ class APPA:
         self._grid_size = 300  # factor out 300 into hparam
 
         self._model = Net(self.input_dim, self.proj_dim)
-        self._training_epochs = 100
+        self._training_epochs = 300
 
         self._kde = tkde.KernelDensity(bandwidth=kde_bandwidth, kernel=kde_kernel, eps=1e-5)
 

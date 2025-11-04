@@ -60,10 +60,10 @@ class APPALitModule(L.LightningModule):
     def training_step(self, batch, batch_idx: int):
         x, x_proj = batch
 
-        x_proj_hat = self.model(x + T.randn_like(x) * 0.02)
+        x_proj_hat = self.model(x) # + T.randn_like(x) * 0.02)
 
-        loss = F.mse_loss(x_proj_hat, x_proj + T.randn_like(x_proj_hat) * 0.02)
-
+        # loss = F.mse_loss(x_proj_hat, x_proj + T.randn_like(x_proj_hat) * 0.02)
+        loss = F.l1_loss(x_proj_hat, x_proj)
         distances = T.cdist(x_proj_hat, self.points_to_avoid)
         threshold = self.barrier_width
         proximity_to_bad_spots = F.relu(threshold - distances).sum(dim=1).mean()
