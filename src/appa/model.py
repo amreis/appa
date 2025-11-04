@@ -1,9 +1,10 @@
+import logging
+
+import lightning as L
 import torch as T
 import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
-import lightning as L
-import logging
 import torchkde as tkde
 
 logger = logging.getLogger(__name__)
@@ -17,6 +18,7 @@ class Net(nn.Module):
         self.proj_dim = proj_dim
 
         self.net = nn.Sequential(
+            nn.Dropout(),
             nn.Linear(self.input_dim, 2048),
             nn.SiLU(),
             nn.Linear(2048, 2048),
@@ -91,8 +93,8 @@ class DiffAPPALitModule(L.LightningModule):
         self._kde = kde_model
         self._kde_data = kde_data
 
-        self.input_noise_std = 0.02
-        self.proj_noise_std = 0.02
+        self.input_noise_std = 0.0
+        self.proj_noise_std = 0.0
 
     def configure_optimizers(self):
         return optim.Adam(self.model.parameters())
@@ -114,10 +116,10 @@ class DiffAPPALitModule(L.LightningModule):
 
         x_proj_perturbed = x_proj_hat + T.randn_like(x_proj_hat) * self.proj_noise_std
         # loss = F.mse_loss(x_proj_hat, x_proj + T.randn_like(x_proj) * self.proj_noise_std)
-        loss = F.mse_loss(x_proj_perturbed, x_proj)
+        loss = F.l1_loss(x_proj_hat, x_proj)
 
         kde_log_prob = self._kde.score_samples(x_proj_perturbed)
-        kde_loss = kde_log_prob.clip(max=-2.0).neg().mean()
+        kde_loss = kde_log_prob.clip(max=-2.0).add(2.0).neg().mean()
 
         loss_total = loss + 0.002 * kde_loss
         if self.use_log:

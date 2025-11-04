@@ -5,7 +5,7 @@ import numpy as np
 import torch as T
 import torchkde as tkde
 
-from appa.model import Net, DiffAPPALitModule
+from appa.model import DiffAPPALitModule, Net
 
 logger = logging.getLogger(__name__)
 
@@ -27,11 +27,12 @@ class APPA:
         self._grid_size = 300  # factor out 300 into hparam
 
         self._model = Net(self.input_dim, self.proj_dim)
-        self._training_epochs = 400
+        self._training_epochs = 100
 
         self._kde = tkde.KernelDensity(bandwidth=kde_bandwidth, kernel=kde_kernel, eps=1e-5)
 
     def fit(self, X_high: np.ndarray | T.Tensor, X_proj: np.ndarray | T.Tensor):
+        self._model.train()
         X_high = self._convert(X_high)
         X_proj = self._convert(X_proj)
 
@@ -55,9 +56,10 @@ class APPA:
 
         trainer.fit(model=litmodel, train_dataloaders=train_dl)
 
-        return self._model
+        return self._model  # maybe return self instead.
 
     def predict_no_grad(self, inputs: np.ndarray | T.Tensor) -> T.Tensor:
+        self._model.eval()
         if not T.is_tensor(inputs):
             inputs = T.tensor(inputs)
 
