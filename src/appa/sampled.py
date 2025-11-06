@@ -4,7 +4,8 @@ import torch as T
 from sklearn.neighbors import KernelDensity, NearestNeighbors
 from sklearn.preprocessing import minmax_scale
 
-from appa.model import Net, APPALitModule
+from appa.model import Net, SAPPALitModule
+from appa.utils import to_float32_tensor
 
 
 class APPA:
@@ -30,12 +31,13 @@ class APPA:
         self._training_epochs = 300
 
     def fit(self, X_high: np.ndarray | T.Tensor, X_proj: np.ndarray | T.Tensor):
-        X_high = self._convert(X_high)
-        X_proj = self._convert(X_proj)
+        self._model.train()
+        X_high = to_float32_tensor(X_high)
+        X_proj = to_float32_tensor(X_proj)
 
         sampled_barrier = self._compute_barrier_function(X_proj)
 
-        litmodel = APPALitModule(
+        litmodel = SAPPALitModule(
             self._model,
             sampled_barrier,
             barrier_strength=self.barrier_strength,
@@ -60,17 +62,12 @@ class APPA:
         return self._model
 
     def predict_no_grad(self, inputs: np.ndarray | T.Tensor) -> T.Tensor:
+        self._model.eval()
         if not T.is_tensor(inputs):
             inputs = T.tensor(inputs)
 
         with T.no_grad():
             return self._model(inputs)
-
-    @T.no_grad()
-    def _convert(self, tensor_like: np.ndarray | T.Tensor) -> T.Tensor:
-        if not T.is_tensor(tensor_like):
-            tensor_like = T.tensor(tensor_like)
-        return tensor_like.float()
 
     def _compute_barrier_function(
         self, X_proj: T.Tensor, *, return_prob: bool = False

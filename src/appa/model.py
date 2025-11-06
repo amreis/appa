@@ -33,7 +33,7 @@ class Net(nn.Module):
         return self.net(inputs)
 
 
-class APPALitModule(L.LightningModule):
+class SAPPALitModule(L.LightningModule):
     def __init__(
         self,
         model: nn.Module,
@@ -60,9 +60,8 @@ class APPALitModule(L.LightningModule):
     def training_step(self, batch, batch_idx: int):
         x, x_proj = batch
 
-        x_proj_hat = self.model(x) # + T.randn_like(x) * 0.02)
+        x_proj_hat = self.model(x)
 
-        # loss = F.mse_loss(x_proj_hat, x_proj + T.randn_like(x_proj_hat) * 0.02)
         loss = F.l1_loss(x_proj_hat, x_proj)
         distances = T.cdist(x_proj_hat, self.points_to_avoid)
         threshold = self.barrier_width
@@ -78,7 +77,7 @@ class APPALitModule(L.LightningModule):
         return total_loss
 
 
-class DiffAPPALitModule(L.LightningModule):
+class APPALitModule(L.LightningModule):
     def __init__(
         self,
         model: nn.Module,
@@ -92,9 +91,6 @@ class DiffAPPALitModule(L.LightningModule):
         self.use_log = use_log
         self._kde = kde_model
         self._kde_data = kde_data
-
-        self.input_noise_std = 0.0
-        self.proj_noise_std = 0.0
 
     def configure_optimizers(self):
         return optim.Adam(self.model.parameters())
@@ -112,13 +108,11 @@ class DiffAPPALitModule(L.LightningModule):
     def training_step(self, batch, batch_idx):
         x, x_proj = batch
 
-        x_proj_hat = self.model(x + T.randn_like(x) * self.input_noise_std)
+        x_proj_hat = self.model(x)
 
-        x_proj_perturbed = x_proj_hat + T.randn_like(x_proj_hat) * self.proj_noise_std
-        # loss = F.mse_loss(x_proj_hat, x_proj + T.randn_like(x_proj) * self.proj_noise_std)
         loss = F.l1_loss(x_proj_hat, x_proj)
 
-        kde_log_prob = self._kde.score_samples(x_proj_perturbed)
+        kde_log_prob = self._kde.score_samples(x_proj_hat)
         kde_loss = kde_log_prob.clip(max=-2.0).add(2.0).neg().mean()
 
         loss_total = loss + 0.002 * kde_loss
@@ -126,8 +120,3 @@ class DiffAPPALitModule(L.LightningModule):
             self.log_dict({"t_loss": loss_total, "kde_l": kde_loss, "mse_l": loss}, prog_bar=True)
 
         return loss_total
-
-    def on_train_epoch_start(self):
-        if False and self.current_epoch > 350:  # TODO CHANGE
-            self.input_noise_std = 0.02
-            self.proj_noise_std = 0.02

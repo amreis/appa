@@ -1,13 +1,10 @@
-import logging
-
 import lightning as L
 import numpy as np
 import torch as T
 import torchkde as tkde
 
-from appa.model import DiffAPPALitModule, Net
-
-logger = logging.getLogger(__name__)
+from appa.model import APPALitModule, Net
+from appa.utils import to_float32_tensor
 
 
 class APPA:
@@ -16,9 +13,9 @@ class APPA:
         input_dim: int,
         proj_dim: int,
         *,
-        logging: bool = False,
         kde_kernel: str = "gaussian",
         kde_bandwidth: float = 0.01,
+        logging: bool = False,
     ):
         self.input_dim = input_dim
         self.proj_dim = proj_dim
@@ -33,10 +30,10 @@ class APPA:
 
     def fit(self, X_high: np.ndarray | T.Tensor, X_proj: np.ndarray | T.Tensor):
         self._model.train()
-        X_high = self._convert(X_high)
-        X_proj = self._convert(X_proj)
+        X_high = to_float32_tensor(X_high)
+        X_proj = to_float32_tensor(X_proj)
 
-        litmodel = DiffAPPALitModule(
+        litmodel = APPALitModule(
             self._model,
             self._kde,
             kde_data=X_proj,
@@ -65,9 +62,3 @@ class APPA:
 
         with T.no_grad():
             return self._model(inputs.float())
-
-    @T.no_grad()
-    def _convert(self, tensor_like: np.ndarray | T.Tensor) -> T.Tensor:
-        if not T.is_tensor(tensor_like):
-            tensor_like = T.tensor(tensor_like)
-        return tensor_like.float()

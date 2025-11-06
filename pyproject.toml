@@ -23,6 +23,7 @@ build-backend = "uv_build"
 dev = [
     "ipykernel>=7.0.1",
     "matplotlib>=3.10.7",
+    "pre-commit>=4.3.0",
     "scipy>=1.16.2",
     "tensorflow-projection-qm",
     "umap-learn>=0.5.9.post2",
@@ -31,3 +32,9 @@ dev = [
 [tool.uv.sources]
 tensorflow-projection-qm = { path = "../tf-projection-qm" }
 torch-kde = { git = "https://github.com/amreis/torch-kde" }
+
+[tool.ruff]
+line-length = 100
+
+[tool.ruff.lint]
+select = ["NPY201"]
