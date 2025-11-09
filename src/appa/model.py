@@ -25,7 +25,7 @@ class Net(nn.Module):
             nn.SiLU(),
             nn.Linear(2048, 2048),
             nn.SiLU(),
-            nn.Linear(2048, 2),
+            nn.Linear(2048, self.proj_dim),
             nn.Sigmoid(),
         )
 

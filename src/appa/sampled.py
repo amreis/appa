@@ -76,15 +76,17 @@ class APPA:
 
         kde = KernelDensity(kernel="gaussian", bandwidth=0.01)
         kde.fit(X_proj.numpy())
-        Z = kde.score_samples(grid).reshape((self._grid_size, self._grid_size))
+        Z = kde.score_samples(grid)
 
         neighbors = NearestNeighbors(n_neighbors=1, p=2).fit(X_proj.numpy())
-        D = neighbors.kneighbors(grid)[0].reshape((self._grid_size, self._grid_size))
+        D = neighbors.kneighbors(grid)[0]
 
         sample_prob_2d = minmax_scale(1 / (1000 + np.exp(Z))) / (1 + D)
+        sample_prob_2d = sample_prob_2d.reshape((self._grid_size, self._grid_size))
+
         rnd = np.random.random_sample(size=(10000, 2))
         bin_width = 1.0 / self._grid_size
-        bin_ix = np.clip((rnd / bin_width).round().astype(int), 0, 299)
+        bin_ix = np.clip((rnd / bin_width).round().astype(int), 0, self._grid_size - 1)
         keep = sample_prob_2d[bin_ix[:, 1], bin_ix[:, 0]] >= np.quantile(sample_prob_2d, 0.8)
 
         sampled_barrier = T.from_numpy(rnd[keep].copy()).float()
