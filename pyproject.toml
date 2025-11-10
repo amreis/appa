@@ -8,10 +8,10 @@ authors = [
 ]
 requires-python = ">=3.12"
 dependencies = [
-    "lightning>=2.5.5",
+    "lightning>=2.0.0",
     "numpy>=1.26.4",
-    "scikit-learn>=1.7.2",
-    "torch>=2.9.0",
+    "scikit-learn>=1.7",
+    "torch>=2.5.0",
     "torch-kde>=0.1.5",
 ]
 
@@ -28,6 +28,9 @@ dev = [
     "tensorflow-projection-qm>=0.3.1",
     "umap-learn>=0.5.9.post2",
 ]
+
+[tool.uv]
+resolution = "lowest-direct"
 
 [tool.uv.sources]
 torch-kde = { git = "https://github.com/amreis/torch-kde" }
