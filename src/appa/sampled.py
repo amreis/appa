@@ -1,3 +1,5 @@
+from typing import overload
+
 import lightning as L
 import numpy as np
 import torch as T
@@ -69,6 +71,12 @@ class APPA:
         with T.no_grad():
             return self._model(inputs)
 
+    @overload
+    def _compute_barrier_function(self, X_proj: T.Tensor) -> T.Tensor: ...
+    @overload
+    def _compute_barrier_function(
+        self, X_proj: T.Tensor, *, return_prob: bool = False
+    ) -> T.Tensor | tuple[T.Tensor, np.ndarray]: ...
     def _compute_barrier_function(
         self, X_proj: T.Tensor, *, return_prob: bool = False
     ) -> T.Tensor | tuple[T.Tensor, np.ndarray]:
@@ -79,7 +87,7 @@ class APPA:
         Z = kde.score_samples(grid)
 
         neighbors = NearestNeighbors(n_neighbors=1, p=2).fit(X_proj.numpy())
-        D = neighbors.kneighbors(grid)[0]
+        D = neighbors.kneighbors(grid)[0].squeeze()
 
         sample_prob_2d = minmax_scale(1 / (1000 + np.exp(Z))) / (1 + D)
         sample_prob_2d = sample_prob_2d.reshape((self._grid_size, self._grid_size))
