@@ -1,7 +1,7 @@
 [project]
 name = "appa"
 version = "0.1.0"
-description = "APPA is the Approximate Parametric Projection Algorithm"
+description = "APPA is the Approximating Parametric Projection Algorithm"
 readme = "README.md"
 authors = [
     { name = "Alister Machado", email = "a.machadodosreis@uu.nl" }
@@ -25,12 +25,11 @@ dev = [
     "matplotlib>=3.10.7",
     "pre-commit>=4.3.0",
     "scipy>=1.16.2",
-    "tensorflow-projection-qm",
+    "tensorflow-projection-qm>=0.3.1",
     "umap-learn>=0.5.9.post2",
 ]
 
 [tool.uv.sources]
-tensorflow-projection-qm = { path = "../tf-projection-qm" }
 torch-kde = { git = "https://github.com/amreis/torch-kde" }
 
 [tool.ruff]
