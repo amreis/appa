@@ -15,6 +15,7 @@ class APPA:
         *,
         kde_kernel: str = "gaussian",
         kde_bandwidth: float = 0.01,
+        training_epochs: int = 300,
         logging: bool = False,
     ):
         self.input_dim = input_dim
@@ -24,7 +25,7 @@ class APPA:
         self._grid_size = 300  # factor out 300 into hparam
 
         self._model = Net(self.input_dim, self.proj_dim)
-        self._training_epochs = 300
+        self._training_epochs = training_epochs
 
         self._kde = tkde.KernelDensity(bandwidth=kde_bandwidth, kernel=kde_kernel, eps=1e-5)
 

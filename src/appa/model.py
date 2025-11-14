@@ -112,7 +112,7 @@ class APPALitModule(L.LightningModule):
 
         loss = F.l1_loss(x_proj_hat, x_proj)
 
-        kde_log_prob = self._kde.score_samples(x_proj_hat)
+        kde_log_prob = self._kde.score_samples(x_proj_hat, batch_size=1024)
         kde_loss = kde_log_prob.clip(max=-2.0).add(2.0).neg().mean()
 
         loss_total = loss + 0.002 * kde_loss

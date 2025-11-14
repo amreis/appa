@@ -18,6 +18,7 @@ class APPA:
         *,
         barrier_strength: float = 0.5,
         barrier_width: float = 0.02,
+        training_epochs: int = 300,
         logging: bool = False,
     ):
         self.input_dim = input_dim
@@ -30,7 +31,7 @@ class APPA:
         self._grid_size = 300  # factor out 300 into hparam
 
         self._model = Net(self.input_dim, self.proj_dim)
-        self._training_epochs = 300
+        self._training_epochs = training_epochs
 
     def fit(self, X_high: np.ndarray | T.Tensor, X_proj: np.ndarray | T.Tensor):
         self._model.train()
