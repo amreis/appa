@@ -83,6 +83,8 @@ class APPALitModule(L.LightningModule):
         model: nn.Module,
         kde_model: tkde.KernelDensity,
         kde_data: T.Tensor,
+        reg_loss_strength: float,
+        kde_clip_val: float = -2.0,
         use_log=False,
     ):
         super().__init__()
@@ -91,6 +93,9 @@ class APPALitModule(L.LightningModule):
         self.use_log = use_log
         self._kde = kde_model
         self._kde_data = kde_data
+
+        self.reg_loss_strength = reg_loss_strength
+        self.kde_clip_val = kde_clip_val
 
     def configure_optimizers(self):
         return optim.Adam(self.model.parameters())
@@ -112,10 +117,15 @@ class APPALitModule(L.LightningModule):
 
         loss = F.l1_loss(x_proj_hat, x_proj)
 
+<<<<<<< HEAD
         kde_log_prob = self._kde.score_samples(x_proj_hat, batch_size=1024)
         kde_loss = kde_log_prob.clip(max=-2.0).add(2.0).neg().mean()
+=======
+        kde_log_prob = self._kde.score_samples(x_proj_hat)
+        kde_loss = kde_log_prob.clip(max=self.kde_clip_val).sub(self.kde_clip_val).neg().mean()
+>>>>>>> d815b7b (expose some more hparams)
 
-        loss_total = loss + 0.002 * kde_loss
+        loss_total = loss + self.reg_loss_strength * kde_loss
         if self.use_log:
             self.log_dict({"t_loss": loss_total, "kde_l": kde_loss, "mse_l": loss}, prog_bar=True)
 

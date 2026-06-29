@@ -13,14 +13,18 @@ class APPA:
         input_dim: int,
         proj_dim: int,
         *,
+        reg_loss_strength: float = 0.002,
         kde_kernel: str = "gaussian",
         kde_bandwidth: float = 0.01,
+        kde_clip_val: float = -2.0,
         training_epochs: int = 300,
         logging: bool = False,
     ):
         self.input_dim = input_dim
         self.proj_dim = proj_dim
         self._logging = logging
+        self.reg_loss_strength = reg_loss_strength
+        self.kde_clip_val = kde_clip_val
 
         self._grid_size = 300  # factor out 300 into hparam
 
@@ -38,6 +42,8 @@ class APPA:
             self._model,
             self._kde,
             kde_data=X_proj,
+            reg_loss_strength=self.reg_loss_strength,
+            kde_clip_val=self.kde_clip_val,
             use_log=self._logging,
         )
 
@@ -63,3 +69,9 @@ class APPA:
 
         with T.no_grad():
             return self._model(inputs.float())
+
+    def compute_kde_scores(self, points: T.Tensor):
+        # will remove this limitation in the future
+        assert self._kde.is_fitted, "model must be fit before compute_kde_scores is called"
+
+        return self._kde.score_samples(points.to(self._kde.device), batch_size=1024)
